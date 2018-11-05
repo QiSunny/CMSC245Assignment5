@@ -58,7 +58,18 @@ binaryExpressionType op lhs_ty rhs_ty
   || op == DividedBy
   || op == Modulus
   = arithmeticExpressionType lhs_ty rhs_ty
+  | op == LessThan || op == GreaterThan || op == LessThanEquals || op == GreaterThanEquals
+  = shiftExpressionType lhs_ty rhs_ty
+
 binaryExpressionType other _ _ = unimplementedM $ "type-check binary expressions with " ++ show other
+
+shiftExpressionType :: Type -> Type -> Java Type
+shiftExpressionType lhs_ty rhs_ty = do
+  checkRelationalExpression lhs_ty
+  checkRelationalExpression rhs_ty
+
+  ref_type <- binaryNumericReferenceType lhs_ty rhs_ty
+  pure (RefType ref_type)
 
 -- | Computes the type of an arithmetic expression, which is one headed
 -- by + (not on strings), -, *, /, or %
@@ -186,6 +197,14 @@ binaryNumericPromotionType lhs_ty rhs_ty = do
     _ -> do _ <- wideningPrimitiveConversionType lhs_unboxed Int
             wideningPrimitiveConversionType rhs_unboxed Int
 
+binaryNumericReferenceType :: Type -> Type -> Java ReferenceType
+binaryNumericReferenceType lhs_ty rhs_ty = do
+  lhs_unboxed <- unboxConversionType lhs_ty
+  rhs_unboxed <- unboxConversionType rhs_ty
+
+--  case (lhs_unboxed, rhs_unboxed) of
+--    ()
+
 -----------------------------------------------------------------------
 -- Utility
 
@@ -200,3 +219,6 @@ primitiveValueType (FloatV _)   = Float
 primitiveValueType (DoubleV _)  = Double
 primitiveValueType (BooleanV _) = Boolean
 primitiveValueType other        = panic $ "primitiveValueType: not a primitive value: " ++ show other
+
+referenceValueType :: Value -> ReferenceType
+-- primitiveValueType (ReferenceV _) = 
